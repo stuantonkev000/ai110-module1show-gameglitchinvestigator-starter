@@ -5,9 +5,9 @@ def get_range_for_difficulty(difficulty: str):
     if difficulty == "Easy":
         return 1, 20
     if difficulty == "Normal":
-        return 1, 100
-    if difficulty == "Hard":
         return 1, 50
+    if difficulty == "Hard":
+        return 1, 100
     return 1, 100
 
 
@@ -43,8 +43,10 @@ def check_guess(guess, secret):
         if g == secret:
             return "Win", "🎉 Correct!"
         if g > secret:
-            return "Too High", "📈 Go HIGHER!"
-        return "Too Low", "📉 Go LOWER!"
+            #this was one bug, it porpmted th eusers ot go higher after their guess was
+            #already too high 
+            return "Too High", "📉 Go LOWER!"
+        return "Too Low", "📈 Go HIGHER!"
 
 
 def update_score(current_score: int, outcome: str, attempt_number: int):
@@ -89,19 +91,17 @@ low, high = get_range_for_difficulty(difficulty)
 st.sidebar.caption(f"Range: {low} to {high}")
 st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 
-if "secret" not in st.session_state:
-    st.session_state.secret = random.randint(low, high)
-
-if "attempts" not in st.session_state:
-    st.session_state.attempts = 1
-
 if "score" not in st.session_state:
     st.session_state.score = 0
 
-if "status" not in st.session_state:
+# Regenerate the game whenever difficulty changes (or on first load)
+if st.session_state.get("active_difficulty") != difficulty:
+    st.session_state.active_difficulty = difficulty
+    #this was a fix clausde did, but I found the issue
+    st.session_state.secret = random.randint(low, high)
+    #this started out as 1, even though the user did not attempt anything yet
+    st.session_state.attempts = 0
     st.session_state.status = "playing"
-
-if "history" not in st.session_state:
     st.session_state.history = []
 
 st.subheader("Make a guess")
@@ -133,6 +133,7 @@ with col3:
 
 if new_game:
     st.session_state.attempts = 0
+
     st.session_state.secret = random.randint(1, 100)
     st.success("New game started.")
     st.rerun()
